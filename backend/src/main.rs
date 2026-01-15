@@ -1,3 +1,4 @@
+use axum::routing::post;
 use axum::Router;
 use dashmap::DashMap;
 use dotenvy::dotenv;
@@ -17,6 +18,8 @@ use tracing::info;
 use tungstenite::handshake::server::{Request, Response};
 use tungstenite::{Message, Utf8Bytes};
 
+use crate::routes::clients::login;
+use crate::routes::clients::register;
 use crate::services::websocket::handle_message;
 use crate::types::client::Client;
 use crate::types::connection::ClientConnection;
@@ -98,6 +101,8 @@ async fn run_ws_server(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<
 
 pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<()>) {
     let app = Router::new()
+        .route("/api/clients/login", post(login::login))
+        .route("/api/clients/register", post(register::register))
         .with_state(clients.clone())
         .layer(CorsLayer::permissive());
     info!("Axum routes ready and hot.");
