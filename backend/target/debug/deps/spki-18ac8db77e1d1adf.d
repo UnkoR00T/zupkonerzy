@@ -1,0 +1,12 @@
+/home/unko/Documents/Dev/zupkonerzy/backend/target/debug/deps/spki-18ac8db77e1d1adf.d: /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/lib.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/algorithm.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/error.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/spki.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/traits.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/../README.md
+
+/home/unko/Documents/Dev/zupkonerzy/backend/target/debug/deps/libspki-18ac8db77e1d1adf.rlib: /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/lib.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/algorithm.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/error.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/spki.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/traits.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/../README.md
+
+/home/unko/Documents/Dev/zupkonerzy/backend/target/debug/deps/libspki-18ac8db77e1d1adf.rmeta: /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/lib.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/algorithm.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/error.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/spki.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/traits.rs /home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/../README.md
+
+/home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/lib.rs:
+/home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/algorithm.rs:
+/home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/error.rs:
+/home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/spki.rs:
+/home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/traits.rs:
+/home/unko/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/spki-0.7.3/src/../README.md:
