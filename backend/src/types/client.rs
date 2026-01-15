@@ -1,5 +1,7 @@
 use crate::types::db::db;
 use crate::{types::claims::JWTClaims, JWT_SECRET};
+use axum::{extract::FromRequestParts, http::{request::Parts, StatusCode}};
+use crate::types::connection::ClientsV2;
 use jsonwebtoken::{DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
@@ -11,6 +13,26 @@ pub struct Client {
     name: String,
     token: Option<String>,
 }
+
+impl FromRequestParts<ClientsV2> for Client {
+    type Rejection = (StatusCode, String);
+
+    async fn from_request_parts(parts: &mut Parts, _state: &ClientsV2) -> Result<Self, Self::Rejection> {
+        let auth_header = parts
+            .headers
+            .get("Authorization")
+            .ok_or((StatusCode::UNAUTHORIZED, "Missing Authorization header".to_string()))?
+            .to_str()
+            .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid Authorization header".to_string()))?;
+
+        let client = Client::from_jwt(&auth_header.to_string())
+            .await
+            .ok_or((StatusCode::UNAUTHORIZED, "Invalid token".to_string()))?;
+
+        Ok(client)
+    }
+}
+
 impl Client {
     pub fn from_row(query: PgRow) -> Client {
         Client {

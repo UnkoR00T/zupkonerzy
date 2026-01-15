@@ -7,3 +7,8 @@ pub struct Room {
     name: String,
     owner: String,
 }
+#[derive(Serialize, Deserialize, FromRow)]
+pub struct WebsocketRoom {
+    id: String,
+    room: Room,
+}

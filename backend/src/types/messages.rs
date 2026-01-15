@@ -17,14 +17,15 @@ impl ServerMessage {
     // Send method directly for ServerMessage to remove the need of other functions.
     pub async fn send(self, clients: &ClientsV2, target: &str) -> Result<(), String> {
         let json: Utf8Bytes = serde_json::to_string(&self).unwrap().into();
-        if let Some(client) = clients.get(target) {
-            if client.tx.send(Message::Text(json)).is_err() {
-                Err(String::from("Failed to send message to client"))
-            } else {
-                Ok(())
+        for room in clients.iter() {
+            if let Some(client) = room.value().get(target) {
+                if client.tx.send(Message::Text(json.clone())).is_err() {
+                    return Err(String::from("Failed to send message to client"));
+                } else {
+                    return Ok(());
+                }
             }
-        } else {
-            Err(String::from("User not found"))
         }
+        Err(String::from("User not found"))
     }
 }

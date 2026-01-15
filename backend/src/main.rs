@@ -1,4 +1,4 @@
-use axum::routing::post;
+use axum::routing::{delete, get, post, put};
 use axum::Router;
 use dashmap::DashMap;
 use dotenvy::dotenv;
@@ -103,6 +103,10 @@ pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<(
     let app = Router::new()
         .route("/api/clients/login", post(login::login))
         .route("/api/clients/register", post(register::register))
+        .route("/api/rooms", post(crate::routes::rooms::create_room::create_room).get(crate::routes::rooms::get_rooms::get_rooms))
+        .route("/api/rooms/:room_id", put(crate::routes::rooms::update_room::update_room).delete(crate::routes::rooms::delete_room::delete_room))
+        .route("/api/rooms/:room_id/questions", post(crate::routes::rooms::questions::create_question::create_question).get(crate::routes::rooms::questions::get_questions::get_questions))
+        .route("/api/rooms/:room_id/questions/:question_id", put(crate::routes::rooms::questions::update_question::update_question).delete(crate::routes::rooms::questions::delete_question::delete_question))
         .with_state(clients.clone())
         .layer(CorsLayer::permissive());
     info!("Axum routes ready and hot.");
@@ -203,14 +207,17 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
     let pending = Arc::new(DashMap::new());
 
     let client_id = client.clone().id;
-    clients.insert(
-        client_id.clone(),
-        ClientConnection {
-            tx,
-            pending: pending.clone(),
-            _db_client: client.clone(),
-        },
-    );
+    clients
+        .entry(room.clone())
+        .or_insert_with(DashMap::new)
+        .insert(
+            client_id.clone(),
+            ClientConnection {
+                tx,
+                pending: pending.clone(),
+                _db_client: client.clone(),
+            },
+        );
 
     let write_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
@@ -229,7 +236,7 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
                     let text = msg.to_text().unwrap();
                     match serde_json::from_str::<ClientMessage>(text) {
                         Ok(parsed) => {
-                            handle_message(&clients, &client, parsed).await;
+                            handle_message(&clients, &room, &client, parsed).await;
                         }
                         Err(e) => tracing::error!("Error parsing message: {e}"),
                     }
@@ -239,7 +246,9 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
         }
     }
 
-    clients.remove(&client_id);
+    if let Some(room_clients) = clients.get(&room) {
+        room_clients.remove(&client_id);
+    }
     write_task.abort();
     info!("Connection closed");
 }
@@ -247,8 +256,10 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
 // Boardcast to all connacted users
 async fn boardcast<T: Serialize>(clients: &ClientsV2, msg: &T) -> Result<(), String> {
     let json: Utf8Bytes = serde_json::to_string(&msg).unwrap().into();
-    for client in clients.iter() {
-        let _ = client.value().tx.send(Message::Text(json.clone()));
+    for room in clients.iter() {
+        for client in room.value().iter() {
+            let _ = client.value().tx.send(Message::Text(json.clone()));
+        }
     }
     Ok(())
 }

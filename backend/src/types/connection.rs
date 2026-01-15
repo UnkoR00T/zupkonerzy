@@ -18,4 +18,5 @@ pub struct ClientConnection {
 }
 
 // Client mapping UUID as String > ClientConnection
-pub type ClientsV2 = Arc<DashMap<String, ClientConnection>>;
+pub type RoomClients = DashMap<String, ClientConnection>;
+pub type ClientsV2 = Arc<DashMap<String, RoomClients>>;
