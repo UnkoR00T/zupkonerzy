@@ -103,10 +103,26 @@ pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<(
     let app = Router::new()
         .route("/api/clients/login", post(login::login))
         .route("/api/clients/register", post(register::register))
-        .route("/api/rooms", post(crate::routes::rooms::create_room::create_room).get(crate::routes::rooms::get_rooms::get_rooms))
-        .route("/api/rooms/:room_id", put(crate::routes::rooms::update_room::update_room).delete(crate::routes::rooms::delete_room::delete_room))
-        .route("/api/rooms/:room_id/questions", post(crate::routes::rooms::questions::create_question::create_question).get(crate::routes::rooms::questions::get_questions::get_questions))
-        .route("/api/rooms/:room_id/questions/:question_id", put(crate::routes::rooms::questions::update_question::update_question).delete(crate::routes::rooms::questions::delete_question::delete_question))
+        .route(
+            "/api/rooms",
+            post(crate::routes::rooms::create_room::create_room)
+                .get(crate::routes::rooms::get_rooms::get_rooms),
+        )
+        .route(
+            "/api/rooms/:room_id",
+            put(crate::routes::rooms::update_room::update_room)
+                .delete(crate::routes::rooms::delete_room::delete_room),
+        )
+        .route(
+            "/api/rooms/:room_id/questions",
+            post(crate::routes::rooms::questions::create_question::create_question)
+                .get(crate::routes::rooms::questions::get_questions::get_questions),
+        )
+        .route(
+            "/api/rooms/:room_id/questions/:question_id",
+            put(crate::routes::rooms::questions::update_question::update_question)
+                .delete(crate::routes::rooms::questions::delete_question::delete_question),
+        )
         .with_state(clients.clone())
         .layer(CorsLayer::permissive());
     info!("Axum routes ready and hot.");
