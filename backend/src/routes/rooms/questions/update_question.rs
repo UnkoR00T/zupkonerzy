@@ -17,22 +17,11 @@ pub async fn update_question(
     client: Client,
     Json(payload): Json<UpdateQuestionPayload>,
 ) -> impl IntoResponse {
-    let room_uuid = match uuid::Uuid::parse_str(&room_id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid room ID" }))).into_response(),
-    };
-    let question_uuid = match uuid::Uuid::parse_str(&question_id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid question ID" }))).into_response(),
-    };
-    let owner_id = match uuid::Uuid::parse_str(&client.id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid client ID" }))).into_response(),
-    };
+    let owner_id = client.id;
 
     // Check ownership of room
     let room_check = sqlx::query("SELECT 1 FROM rooms WHERE id = $1 AND owner = $2")
-        .bind(room_uuid)
+        .bind(&room_id)
         .bind(owner_id)
         .fetch_optional(db())
         .await;
@@ -52,8 +41,8 @@ pub async fn update_question(
         .bind(payload.video_url)
         .bind(payload.answers)
         .bind(payload.correct)
-        .bind(question_uuid)
-        .bind(room_uuid)
+        .bind(question_id)
+        .bind(room_id)
         .execute(db())
         .await;
 

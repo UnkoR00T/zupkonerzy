@@ -13,18 +13,11 @@ pub async fn update_room(
     client: Client,
     Json(payload): Json<UpdateRoomPayload>,
 ) -> impl IntoResponse {
-    let room_uuid = match uuid::Uuid::parse_str(&room_id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid room ID" }))).into_response(),
-    };
-    let owner_id = match uuid::Uuid::parse_str(&client.id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid client ID" }))).into_response(),
-    };
+    let owner_id = client.id;
 
     let result = sqlx::query("UPDATE rooms SET name = $1 WHERE id = $2 AND owner = $3")
         .bind(payload.name)
-        .bind(room_uuid)
+        .bind(room_id)
         .bind(owner_id)
         .execute(db())
         .await;

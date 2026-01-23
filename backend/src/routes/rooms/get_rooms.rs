@@ -5,10 +5,7 @@ pub async fn get_rooms(
     State(_clients): State<ClientsV2>,
     client: Client,
 ) -> impl IntoResponse {
-    let owner_id = match uuid::Uuid::parse_str(&client.id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid client ID" }))).into_response(),
-    };
+    let owner_id = client.id;
 
     let rooms = sqlx::query_as::<_, Room>("SELECT id::text, name, owner::text FROM rooms WHERE owner = $1")
         .bind(owner_id)

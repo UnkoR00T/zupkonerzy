@@ -4,7 +4,6 @@ use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use sqlx::Row;
-use std::str::FromStr;
 use uuid::Uuid;
 
 use crate::{
@@ -19,7 +18,7 @@ pub struct LoginPayload {
 }
 
 pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
-    let query = match sqlx::query("SELECT id, password, username FROM clients WHERE email = $1")
+    let query = match sqlx::query("SELECT id, password, name FROM clients WHERE email = $1")
         .bind(payload.email.to_lowercase())
         .fetch_optional(db())
         .await
@@ -64,12 +63,11 @@ pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
     }
 
     let id: String = res.get("id");
-    let id = Uuid::from_str(&id).unwrap();
     let claims = JWTClaims {
         sub: id,
         exp: (Utc::now() + Duration::days(7)).timestamp() as usize,
         iat: Utc::now().timestamp() as usize,
-        jti: Uuid::new_v4(),
+        jti: Uuid::new_v4().to_string(),
     };
     let secret = JWT_SECRET.get().expect("JWT_SECRET not set.");
     let token = match jsonwebtoken::encode(
@@ -86,7 +84,7 @@ pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
             );
         }
     };
-    let username: String = res.get("username");
+    let username: String = res.get("name");
     (
         StatusCode::OK,
         Json(

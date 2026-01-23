@@ -6,22 +6,11 @@ pub async fn delete_question(
     Path((room_id, question_id)): Path<(String, String)>,
     client: Client,
 ) -> impl IntoResponse {
-    let room_uuid = match uuid::Uuid::parse_str(&room_id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid room ID" }))).into_response(),
-    };
-    let question_uuid = match uuid::Uuid::parse_str(&question_id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid question ID" }))).into_response(),
-    };
-    let owner_id = match uuid::Uuid::parse_str(&client.id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid client ID" }))).into_response(),
-    };
+    let owner_id = client.id;
 
     // Check ownership of room
     let room_check = sqlx::query("SELECT 1 FROM rooms WHERE id = $1 AND owner = $2")
-        .bind(room_uuid)
+        .bind(&room_id)
         .bind(owner_id)
         .fetch_optional(db())
         .await;
@@ -36,8 +25,8 @@ pub async fn delete_question(
     }
 
     let result = sqlx::query("DELETE FROM questions WHERE id = $1 AND room_id = $2")
-        .bind(question_uuid)
-        .bind(room_uuid)
+        .bind(question_id)
+        .bind(room_id)
         .execute(db())
         .await;
 

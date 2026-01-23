@@ -34,11 +34,11 @@ pub async fn register(Json(payload): Json<RegisterPayload>) -> impl IntoResponse
         }
     };
 
-    let user_id = Uuid::new_v4();
+    let user_id = Uuid::new_v4().to_string();
 
     if let Err(err) =
-        sqlx::query("INSERT INTO users (id, username, email, password) VALUES ($1, $2, $3, $4);")
-            .bind(user_id.to_string())
+        sqlx::query("INSERT INTO clients (id, name, email, password) VALUES ($1, $2, $3, $4);")
+            .bind(&user_id)
             .bind(&payload.username)
             .bind(payload.email.to_lowercase())
             .bind(&password_hash)
@@ -56,7 +56,7 @@ pub async fn register(Json(payload): Json<RegisterPayload>) -> impl IntoResponse
         sub: user_id,
         exp: (Utc::now() + Duration::hours(24)).timestamp() as usize,
         iat: Utc::now().timestamp() as usize,
-        jti: Uuid::new_v4(),
+        jti: Uuid::new_v4().to_string(),
     };
     let secret = JWT_SECRET.get().expect("JWT_SECRET not set.");
     let token = match jsonwebtoken::encode(

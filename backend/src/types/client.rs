@@ -25,7 +25,9 @@ impl FromRequestParts<ClientsV2> for Client {
             .to_str()
             .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid Authorization header".to_string()))?;
 
-        let client = Client::from_jwt(&auth_header.to_string())
+        let token = auth_header.strip_prefix("Bearer ").unwrap_or(auth_header);
+
+        let client = Client::from_jwt(&token.to_string())
             .await
             .ok_or((StatusCode::UNAUTHORIZED, "Invalid token".to_string()))?;
 
@@ -50,18 +52,13 @@ impl Client {
         );
         match claims {
             Ok(jwt) => {
-                let client = Client::try_get(&jwt.claims.sub.to_string()).await?;
-                if let Some(token) = &client.token {
-                    if token == auth {
-                        return Some(client);
-                    }
-                }
-                None
+                let client = Client::try_get(jwt.claims.sub).await?;
+                Some(client)
             }
             Err(_) => None,
         }
     }
-    pub async fn try_get(id: &String) -> Option<Client> {
+    pub async fn try_get(id: String) -> Option<Client> {
         let query = sqlx::query("SELECT id, name, token FROM public.clients WHERE id = $1")
             .bind(id)
             .fetch_optional(db())

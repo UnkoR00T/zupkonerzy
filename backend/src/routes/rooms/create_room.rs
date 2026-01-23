@@ -13,10 +13,7 @@ pub async fn create_room(
     client: Client,
     Json(payload): Json<CreateRoomPayload>,
 ) -> impl IntoResponse {
-    let owner_id = match uuid::Uuid::parse_str(&client.id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid client ID" }))),
-    };
+    let owner_id = client.id;
 
     let query = sqlx::query("INSERT INTO rooms (name, owner) VALUES ($1, $2) RETURNING id")
         .bind(payload.name)
@@ -26,8 +23,8 @@ pub async fn create_room(
 
     match query {
         Ok(row) => {
-            let id: uuid::Uuid = row.get("id");
-            (StatusCode::CREATED, Json(serde_json::json!({ "id": id.to_string() })))
+            let id: String = row.get("id");
+            (StatusCode::CREATED, Json(serde_json::json!({ "id": id })))
         }
         Err(e) => {
             tracing::error!("Failed to create room: {e}");

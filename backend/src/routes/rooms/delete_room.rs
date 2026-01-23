@@ -6,17 +6,10 @@ pub async fn delete_room(
     Path(room_id): Path<String>,
     client: Client,
 ) -> impl IntoResponse {
-    let room_uuid = match uuid::Uuid::parse_str(&room_id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid room ID" }))).into_response(),
-    };
-    let owner_id = match uuid::Uuid::parse_str(&client.id) {
-        Ok(id) => id,
-        Err(_) => return (StatusCode::BAD_REQUEST, Json(serde_json::json!({ "error": "Invalid client ID" }))).into_response(),
-    };
+    let owner_id = client.id;
 
     let result = sqlx::query("DELETE FROM rooms WHERE id = $1 AND owner = $2")
-        .bind(room_uuid)
+        .bind(room_id)
         .bind(owner_id)
         .execute(db())
         .await;
