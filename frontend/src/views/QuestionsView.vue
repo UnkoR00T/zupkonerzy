@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { request } from '@/api/api'
@@ -21,6 +21,13 @@ interface Question {
   difficulty: number | null
 }
 
+interface QuestionsResponse {
+  questions: Question[]
+  total: number
+  page: number
+  limit: number
+}
+
 const questions = ref<Question[]>([])
 const loading = ref(true)
 const isEditing = ref(false)
@@ -34,17 +41,53 @@ const editedQuestion = ref<Question>({
   difficulty: null
 })
 
+// Filters and Pagination
+const page = ref(1)
+const limit = ref(50)
+const search = ref('')
+const difficulty = ref<number | ''>('')
+const total = ref(0)
+let searchTimeout: ReturnType<typeof setTimeout>
+
 async function fetchQuestions() {
   loading.value = true
   try {
-    const data = await request<Question[]>(`/rooms/${roomId}/questions`, 'GET', null, auth.token!)
-    questions.value = data
+    const queryParams = new URLSearchParams()
+    queryParams.append('page', page.value.toString())
+    queryParams.append('limit', limit.value.toString())
+    if (search.value) queryParams.append('search', search.value)
+    if (difficulty.value !== '') queryParams.append('difficulty', difficulty.value.toString())
+
+    const data = await request<QuestionsResponse>(`/rooms/${roomId}/questions?${queryParams.toString()}`, 'GET', null, auth.token!)
+    // Handle both old and new response structure implicitly during migration if needed, but we expect new structure
+    if ('questions' in data) {
+      questions.value = data.questions
+      total.value = data.total
+    } else {
+      // Fallback for safety if backend wasn't ready
+      questions.value = data as unknown as Question[]
+      total.value = questions.value.length
+    }
   } catch (e: any) {
     console.error(e)
   } finally {
     loading.value = false
   }
 }
+
+// Debounced search
+watch(search, () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    page.value = 1
+    fetchQuestions()
+  }, 300)
+})
+
+watch([difficulty, limit], () => {
+  page.value = 1
+  fetchQuestions()
+})
 
 async function saveQuestion() {
   try {
@@ -65,6 +108,7 @@ async function deleteQuestion(id: string) {
   try {
     await request(`/rooms/${roomId}/questions/${id}`, 'DELETE', null, auth.token!)
     questions.value = questions.value.filter(q => q.id !== id)
+    total.value -= 1
   } catch (e: any) {
     alert(e.message)
   }
@@ -91,6 +135,20 @@ function resetForm() {
   isEditing.value = false
 }
 
+function nextPage() {
+  if (page.value * limit.value < total.value) {
+    page.value++
+    fetchQuestions()
+  }
+}
+
+function prevPage() {
+  if (page.value > 1) {
+    page.value--
+    fetchQuestions()
+  }
+}
+
 onMounted(fetchQuestions)
 </script>
 
@@ -110,6 +168,19 @@ onMounted(fetchQuestions)
         </div>
       </div>
       <button @click="openEdit()" class="btn-primary">Add Question</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-col md:flex-row gap-4">
+      <div class="flex-1">
+        <input v-model="search" class="input-field w-full" placeholder="Search questions..." />
+      </div>
+      <div class="w-full md:w-48">
+        <select v-model="difficulty" class="input-field w-full">
+          <option value="" class="text-black">All Difficulties</option>
+          <option v-for="i in 10" :key="i" :value="i" class="text-black">Level {{ i }}</option>
+        </select>
+      </div>
     </div>
 
     <!-- Edit Modal / Form -->
@@ -184,11 +255,14 @@ onMounted(fetchQuestions)
     </div>
 
     <div v-else class="space-y-4">
+      <div v-if="questions.length === 0" class="text-center py-10 text-slate-400">
+        No questions found matching your criteria.
+      </div>
       <div v-for="(q, idx) in questions" :key="q.id" class="glass-card p-6">
         <div class=" flex items-start justify-between gap-4 group mb-2">
           <div class="space-y-4 flex-1">
             <div class="flex items-center gap-2">
-              <span class="text-brand font-bold">#{{ idx + 1 }}</span>
+              <span class="text-brand font-bold">#{{ (page - 1) * limit + idx + 1 }}</span>
               <div class="flex-1">
                 <div class="flex items-center gap-2 mb-1">
                   <span v-if="q.difficulty === null || q.difficulty === undefined"
@@ -236,6 +310,23 @@ onMounted(fetchQuestions)
             :class="aIdx === q.correct ? 'bg-green-500/10 border-green-500/50 text-green-400' : 'bg-white/5 border-white/10 text-slate-400'">
             {{ ans }}
           </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div v-if="total > limit" class="flex items-center justify-between pt-4 border-t border-white/10">
+        <div class="text-sm text-slate-400">
+          Showing {{ (page - 1) * limit + 1 }} to {{ Math.min(page * limit, total) }} of {{ total }} results
+        </div>
+        <div class="flex gap-2">
+          <button @click="prevPage" :disabled="page <= 1"
+            class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-white">
+            Previous
+          </button>
+          <button @click="nextPage" :disabled="page * limit >= total"
+            class="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-white">
+            Next
+          </button>
         </div>
       </div>
     </div>
