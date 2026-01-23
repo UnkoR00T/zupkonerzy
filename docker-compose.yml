@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16
-    container_name: postgres_db
     restart: always
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -18,7 +17,6 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: backend
     restart: always
     depends_on:
       - db
@@ -36,7 +34,6 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: frontend
     restart: always
     depends_on:
       - backend
@@ -46,7 +43,6 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflared
     restart: always
     command: tunnel --no-autoupdate run
     environment:
