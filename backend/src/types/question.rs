@@ -11,10 +11,11 @@ pub struct Question {
     video_url: Option<String>,
     answers: Vec<String>,
     correct: i32,
+    pub difficulty: Option<i32>,
 }
 impl Question {
     pub async fn get_from_id(id: &String) -> Option<Self> {
-        sqlx::query_as::<_, Question>("SELECT 1 FROM question WHERE id = $1")
+        sqlx::query_as::<_, Question>("SELECT 1 FROM questions WHERE id = $1")
             .bind(id)
             .fetch_one(db())
             .await

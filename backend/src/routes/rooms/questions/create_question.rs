@@ -1,7 +1,12 @@
-use axum::{extract::{State, Path}, http::StatusCode, response::IntoResponse, Json};
+use crate::types::{client::Client, connection::ClientsV2, db::db};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+};
 use serde::Deserialize;
 use sqlx::Row;
-use crate::types::{client::Client, connection::ClientsV2, db::db};
 
 #[derive(Deserialize)]
 pub struct CreateQuestionPayload {
@@ -10,6 +15,7 @@ pub struct CreateQuestionPayload {
     pub video_url: Option<String>,
     pub answers: Vec<String>,
     pub correct: i32,
+    pub difficulty: Option<i32>,
 }
 
 pub async fn create_question(
@@ -26,23 +32,34 @@ pub async fn create_question(
         .bind(owner_id)
         .fetch_optional(db())
         .await;
-    
+
     match room_check {
-        Ok(Some(_)) => {},
-        Ok(None) => return (StatusCode::NOT_FOUND, Json(serde_json::json!({ "error": "Room not found or access denied" }))).into_response(),
+        Ok(Some(_)) => {}
+        Ok(None) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::json!({ "error": "Room not found or access denied" })),
+            )
+                .into_response();
+        }
         Err(e) => {
-             tracing::error!("Failed to check room: {e}");
-             return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response();
+            tracing::error!("Failed to check room: {e}");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": "Database error" })),
+            )
+                .into_response();
         }
     }
 
-    let query = sqlx::query("INSERT INTO questions (room_id, question, img_url, video_url, answers, correct) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id")
+    let query = sqlx::query("INSERT INTO questions (room_id, question, img_url, video_url, answers, correct, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id")
         .bind(room_id)
         .bind(payload.question)
         .bind(payload.img_url)
         .bind(payload.video_url)
         .bind(payload.answers)
         .bind(payload.correct)
+        .bind(payload.difficulty)
         .fetch_one(db())
         .await;
 
@@ -53,7 +70,11 @@ pub async fn create_question(
         }
         Err(e) => {
             tracing::error!("Failed to create question: {e}");
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({ "error": "Database error" }))).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": "Database error" })),
+            )
+                .into_response()
         }
     }
 }
