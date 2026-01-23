@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 
-const BASE_URL = 'http://localhost:8080/api'
+const BASE_URL = import.meta.env.VITE_BACKEND || 'http://localhost:8080/api'
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,

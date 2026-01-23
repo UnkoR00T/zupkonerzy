@@ -38,6 +38,8 @@ services:
     # No ports mapping needed here
     networks:
       - app_network
+    environment:
+      - VITE_BACKEND=${VITE_BACKEND}
 
   cloudflared:
     image: cloudflare/cloudflared:latest
