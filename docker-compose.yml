@@ -26,8 +26,8 @@ services:
       - WS_ADDR=0.0.0.0:8000
       - AXUM_ADDR=0.0.0.0:8081
     # No ports mapping needed here
-    volumes:
-      - ./backend:/app
+#    volumes:
+#      - ./backend:/app
     networks:
       - app_network
 
