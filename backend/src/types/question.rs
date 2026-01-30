@@ -3,7 +3,7 @@ use sqlx::prelude::FromRow;
 
 use crate::types::db::db;
 
-#[derive(Serialize, Deserialize, FromRow)]
+#[derive(Serialize, Deserialize, FromRow, Clone, Debug)]
 pub struct Question {
     id: String,
     question: String,
@@ -15,10 +15,33 @@ pub struct Question {
 }
 impl Question {
     pub async fn get_from_id(id: &String) -> Option<Self> {
-        sqlx::query_as::<_, Question>("SELECT 1 FROM questions WHERE id = $1")
+        sqlx::query_as::<_, Question>("SELECT * FROM questions WHERE id = $1")
             .bind(id)
             .fetch_one(db())
             .await
             .ok()
+    }
+
+    pub async fn get_random_question(target_diff: i32) -> Option<Self> {
+        let q1 = sqlx::query_as::<_, Question>(
+            "SELECT * FROM questions WHERE difficulty = $1 ORDER BY RANDOM() LIMIT 1",
+        )
+        .bind(target_diff)
+        .fetch_optional(db())
+        .await
+        .ok()
+        .flatten();
+
+        if q1.is_some() {
+            return q1;
+        }
+
+        // Fallback: order by difference from target difficulty
+        sqlx::query_as::<_, Question>("SELECT * FROM questions ORDER BY ABS(COALESCE(difficulty, 0) - $1) ASC, RANDOM() LIMIT 1")
+            .bind(target_diff)
+            .fetch_optional(db())
+            .await
+            .ok()
+            .flatten()
     }
 }

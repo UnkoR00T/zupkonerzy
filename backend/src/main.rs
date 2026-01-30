@@ -1,21 +1,20 @@
-use axum::routing::{delete, get, post, put};
 use axum::Router;
+use axum::routing::{post, put};
 use dashmap::DashMap;
 use dotenvy::dotenv;
 use futures_util::{SinkExt, StreamExt};
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::env;
-use std::panic;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::signal;
 use tokio::sync::broadcast;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::mpsc;
 use tokio_tungstenite::accept_hdr_async;
 use tower_http::cors::CorsLayer;
 use tracing::info;
-use tungstenite::handshake::server::{Request, Response};
+use tungstenite::handshake::server::{ErrorResponse, Request, Response};
 use tungstenite::{Message, Utf8Bytes};
 
 use crate::routes::clients::login;
@@ -25,6 +24,7 @@ use crate::types::client::Client;
 use crate::types::connection::ClientConnection;
 use crate::types::connection::ClientsV2;
 use crate::types::db::init_db;
+use crate::types::gamestate::Games;
 use crate::types::messages::ClientMessage;
 use crate::types::messages::ServerMessage;
 
@@ -33,6 +33,7 @@ mod services;
 mod types;
 
 pub static JWT_SECRET: OnceCell<String> = OnceCell::new();
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -47,13 +48,18 @@ async fn main() {
 
     info!("Setting up server");
     let clients: ClientsV2 = Arc::new(DashMap::new());
+    let games: Games = Arc::new(DashMap::new());
 
     let (shutdown_tx, _) = broadcast::channel::<()>(1);
 
     let ws_shutdown_rx = shutdown_tx.subscribe();
     let rocket_shutdown_rx = shutdown_tx.subscribe();
 
-    let ws_server = tokio::spawn(run_ws_server(clients.clone(), ws_shutdown_rx));
+    let ws_server = tokio::spawn(run_ws_server(
+        clients.clone(),
+        games.clone(),
+        ws_shutdown_rx,
+    ));
     let axum_server = tokio::spawn(run_axum(clients.clone(), rocket_shutdown_rx));
 
     info!("Setting up cron");
@@ -65,7 +71,7 @@ async fn main() {
     tracing::info!("All servers stopped cleanly");
 }
 
-async fn run_ws_server(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<()>) {
+async fn run_ws_server(clients: ClientsV2, games: Games, mut shutdown_rx: broadcast::Receiver<()>) {
     let addr = env::var("WS_ADDR").expect("No WS_ADDR env var.");
     let listener = TcpListener::bind(&addr)
         .await
@@ -81,7 +87,7 @@ async fn run_ws_server(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<
             accept_res = listener.accept() => {
                 match accept_res {
                     Ok((stream, _)) => {
-                        tokio::spawn(handle_connection(stream, clients.clone()));
+                        tokio::spawn(handle_connection(stream, clients.clone(), games.clone()));
                     }
                     Err(e) => {
                         tracing::error!("Accept error: {e}");
@@ -137,7 +143,7 @@ pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<(
         tracing::warn!("Axum server shutting down...");
     };
 
-    axum::serve(listener, app)
+    axum::serve(listener, app.into_make_service())
         .with_graceful_shutdown(shutdown_signal)
         .await
         .map_err(|err| {
@@ -155,85 +161,137 @@ pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<(
 }
 
 // Handling connection of an user, runs per connected user.
-async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
-    let mut user_jwt = String::new();
-    let mut room = String::new();
-    // Opens a stream and gets an UUID
-    let ws_stream = accept_hdr_async(stream, |req: &Request, res: Response| {
-        if let Some(room_id) = req.headers().get("X-Room")
-            && let Ok(room_id) = room_id.to_str()
-        {
-            room = room_id.to_string();
+async fn handle_connection(stream: TcpStream, clients: ClientsV2, games: Games) {
+    let handshake_data = Arc::new(Mutex::new(None));
+    let callback_data = handshake_data.clone();
+
+    let callback = move |req: &Request, res: Response| -> Result<Response, ErrorResponse> {
+        let headers = req.headers();
+        let query_str = req.uri().query().unwrap_or("");
+
+        let mut room_id = None;
+        let mut token_val = None;
+
+        // Extract from headers
+        if let Some(room) = headers.get("X-Room") {
+            room_id = room.to_str().ok().map(|s| s.to_string());
         }
-        if let Some(auth) = req.headers().get("Authorization") && let Ok(auth) = auth.to_str(){
-            user_jwt = auth.to_string()
+        if let Some(auth) = headers.get("Authorization") {
+            token_val = auth
+                .to_str()
+                .ok()
+                .and_then(|s| s.strip_prefix("Bearer ").map(|t| t.to_string()));
         }
-        Ok(res)
-    })
-    .await
-    .expect("Error during WebSocket handshake");
-    if user_jwt.is_empty() {
-        let error_msg = Message::Text(
-            serde_json::json!({
-                "error": "Auth token is not provided."
-            })
-            .to_string()
-            .into(),
-        );
-        let mut stream = ws_stream;
-        let _ = stream.send(error_msg).await;
-        let _ = stream.close(None).await;
-        return;
-    }
-    let client: Client = match Client::from_jwt(&user_jwt).await {
-        Some(c) => {
-            if room.is_empty() {
-                let error_msg = Message::Text(
-                    serde_json::json!({
-                        "error": "No room provided"
-                    })
-                    .to_string()
-                    .into(),
-                );
-                let mut stream = ws_stream;
-                let _ = stream.send(error_msg).await;
-                let _ = stream.close(None).await;
-                return;
+
+        // Extract from query if not found in headers
+        if room_id.is_none() || token_val.is_none() {
+            for pair in query_str.split('&') {
+                if let Some((key, value)) = pair.split_once('=') {
+                    if room_id.is_none() && key == "room" {
+                        room_id = Some(value.to_string());
+                    }
+                    if token_val.is_none() && key == "token" {
+                        token_val = Some(value.to_string());
+                    }
+                }
             }
-            c
         }
-        None => {
-            let error_msg = Message::Text(
-                serde_json::json!({
-                    "error": "Connection rejected: Invalid token."
-                })
-                .to_string()
-                .into(),
-            );
-            let mut stream = ws_stream;
-            let _ = stream.send(error_msg).await;
-            let _ = stream.close(None).await;
+
+        if let (Some(room), Some(token)) = (room_id, token_val) {
+            *callback_data.lock().unwrap() = Some((room, token));
+            Ok(res)
+        } else {
+            Err(ErrorResponse::new(Some(
+                "Missing Room ID or Connection Token".to_string(),
+            )))
+        }
+    };
+
+    let ws_stream = match accept_hdr_async(stream, callback).await {
+        Ok(ws) => ws,
+        Err(e) => {
+            tracing::error!("Handshake failed: {}", e);
             return;
         }
     };
+
+    // Extract captured data
+    let (room, token) = match handshake_data.lock().unwrap().take() {
+        Some(data) => data,
+        None => {
+            // Should verify be closed by handshake error, but just in case
+            tracing::error!("No handshake data captured");
+            return;
+        }
+    };
+
+    // Authenticate Client
+    let client = match Client::from_jwt(&token).await {
+        Some(c) => c,
+        None => {
+            tracing::error!("Invalid Token for Room: {}", room);
+            // Optionally send a close frame here
+            return;
+        }
+    };
+
+    tracing::info!("Client {} connected to room {}", client.id, room);
 
     // Splits ws stream in to write and read
     let (mut write, mut read) = ws_stream.split();
     let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
     let pending = Arc::new(DashMap::new());
 
-    let client_id = client.clone().id;
+    let client_id = client.id.clone();
+
+    // Ensure GameState exists for this room
+    games.entry(room.clone()).or_default();
+
+    // Check if client is already in the room
+    if let Some(room_clients) = clients.get(&room) {
+        if let Some(existing_client) = room_clients.get(&client_id) {
+            info!("Duplicate connection attempted for user {}", client_id);
+            // Notify existing connection
+            let _ = existing_client.tx.send(Message::Text(
+                serde_json::to_string(&ServerMessage::ConnectionAttempted())
+                    .unwrap()
+                    .into(),
+            ));
+            // Close new connection
+            return;
+        }
+    }
+
+    // Register Client
     clients
         .entry(room.clone())
         .or_insert_with(DashMap::new)
         .insert(
             client_id.clone(),
             ClientConnection {
-                tx,
+                tx: tx.clone(),
                 pending: pending.clone(),
                 _db_client: client.clone(),
             },
         );
+
+    // Sync Game State if started
+    if let Some(game) = games.get(&room) {
+        if game.started {
+            let _ = tx.send(Message::Text(
+                serde_json::to_string(&ServerMessage::GameStarted())
+                    .unwrap()
+                    .into(),
+            ));
+            if let Some(ref q) = game.current_question {
+                let _ = tx.send(Message::Text(
+                    serde_json::to_string(&ServerMessage::Question(q.clone()))
+                        .unwrap()
+                        .into(),
+                ));
+            }
+        }
+    }
 
     let write_task = tokio::spawn(async move {
         while let Some(msg) = rx.recv().await {
@@ -252,7 +310,7 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
                     let text = msg.to_text().unwrap();
                     match serde_json::from_str::<ClientMessage>(text) {
                         Ok(parsed) => {
-                            handle_message(&clients, &room, &client, parsed).await;
+                            handle_message(&clients, &games, &room, &client, parsed).await;
                         }
                         Err(e) => tracing::error!("Error parsing message: {e}"),
                     }
@@ -266,7 +324,7 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2) {
         room_clients.remove(&client_id);
     }
     write_task.abort();
-    info!("Connection closed");
+    info!("Connection closed for user {}", client_id);
 }
 
 // Boardcast to all connacted users

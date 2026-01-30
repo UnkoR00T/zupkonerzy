@@ -2,16 +2,21 @@ use serde::{Deserialize, Serialize};
 use tungstenite::{Message, Utf8Bytes};
 
 use crate::types::connection::ClientsV2;
+use crate::types::question::Question;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "type", content = "data")]
 pub(crate) enum ClientMessage {
     AnswerQuestion { answer: i32 },
+    Start {},
 }
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "data")]
 pub(crate) enum ServerMessage {
     Exiting(),
+    GameStarted(),
+    Question(Question),
+    ConnectionAttempted(),
 }
 impl ServerMessage {
     // Send method directly for ServerMessage to remove the need of other functions.
@@ -27,5 +32,14 @@ impl ServerMessage {
             }
         }
         Err(String::from("User not found"))
+    }
+
+    pub fn broadcast_room(self, clients: &ClientsV2, room_id: &str) {
+        let json: Utf8Bytes = serde_json::to_string(&self).unwrap().into();
+        if let Some(room) = clients.get(room_id) {
+            for client in room.value().iter() {
+                let _ = client.value().tx.send(Message::Text(json.clone()));
+            }
+        }
     }
 }
