@@ -7,8 +7,8 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::{
-    types::{claims::JWTClaims, db::db},
     JWT_SECRET,
+    types::{claims::JWTClaims, db::db},
 };
 
 #[derive(Serialize, Deserialize)]
@@ -18,12 +18,12 @@ pub struct LoginPayload {
 }
 
 pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
-    let query = match sqlx::query("SELECT id, password, name FROM clients WHERE email = $1")
+    let users = match sqlx::query("SELECT id, password, name FROM clients WHERE email = $1")
         .bind(payload.email.to_lowercase())
-        .fetch_optional(db())
+        .fetch_all(db())
         .await
     {
-        Ok(q) => q,
+        Ok(u) => u,
         Err(e) => {
             tracing::error!("{e}");
             return (
@@ -33,12 +33,22 @@ pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
         }
     };
 
-    let Some(res) = query else {
+    if users.is_empty() {
         return (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({"error": "Account not found"})),
         );
-    };
+    }
+
+    if users.len() > 1 {
+        tracing::warn!("Duplicate accounts found for email: {}", payload.email);
+        for (i, user) in users.iter().enumerate() {
+            let id: String = user.get("id");
+            tracing::warn!("Account {}: ID={}", i, id);
+        }
+    }
+
+    let res = &users[0];
 
     let hash = match PasswordHash::new(res.get("password")) {
         Ok(h) => h,
@@ -52,10 +62,26 @@ pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
     };
 
     let argon2 = Argon2::default();
-    if argon2
-        .verify_password(payload.password.as_bytes(), &hash)
-        .is_err()
-    {
+    if let Err(e) = argon2.verify_password(payload.password.as_bytes(), &hash) {
+        tracing::error!(
+            "Password verification failed for user {}: {}",
+            res.get::<String, _>("id"),
+            e
+        );
+        for (i, other_user) in users.iter().enumerate().skip(1) {
+            let other_hash = PasswordHash::new(other_user.get("password")).unwrap();
+            if argon2
+                .verify_password(payload.password.as_bytes(), &other_hash)
+                .is_ok()
+            {
+                tracing::error!(
+                    "BUT! Password matched for duplicate account index {} (ID={})",
+                    i,
+                    other_user.get::<String, _>("id")
+                );
+            }
+        }
+
         return (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({"error": "Password is not correct."})),

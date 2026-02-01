@@ -1,6 +1,6 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
+    password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 use axum::{extract::Json, http::StatusCode, response::IntoResponse};
 use chrono::{Duration, Utc};
@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    types::{claims::JWTClaims, db::db},
     JWT_SECRET,
+    types::{claims::JWTClaims, db::db},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -45,10 +45,9 @@ pub async fn register(Json(payload): Json<RegisterPayload>) -> impl IntoResponse
             .execute(db())
             .await
     {
-        tracing::error!("DB Failed: {err}");
         return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({"error": "Database error"})),
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({"error": "Email or username already in use"})),
         );
     }
 
