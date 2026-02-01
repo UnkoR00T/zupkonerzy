@@ -120,6 +120,12 @@ pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<(
                 .delete(crate::routes::rooms::delete_room::delete_room),
         )
         .route(
+            "/api/rooms/{room_id}/access",
+            post(crate::routes::rooms::access::add_access)
+                .delete(crate::routes::rooms::access::remove_access)
+                .get(crate::routes::rooms::access::list_access),
+        )
+        .route(
             "/api/rooms/{room_id}/questions",
             post(crate::routes::rooms::questions::create_question::create_question)
                 .get(crate::routes::rooms::questions::get_questions::get_questions),

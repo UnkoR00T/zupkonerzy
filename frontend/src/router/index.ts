@@ -28,6 +28,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/rooms/:id/access',
+      name: 'access',
+      component: () => import('../views/RoomAccessView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/rooms/:id/game',
+      name: 'game',
+      component: () => import('../views/GameView.vue'),
+      meta: { requiresAuth: true, hideLayout: true },
+    },
+    {
       path: '/',
       redirect: '/rooms',
     },

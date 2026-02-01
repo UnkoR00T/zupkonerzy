@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { RouterView, useRouter } from 'vue-router'
+import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 function handleLogout() {
@@ -14,7 +15,8 @@ function handleLogout() {
 <template>
   <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
     <!-- Navigation -->
-    <nav v-if="auth.isAuthenticated" class="glass-card !rounded-none !border-x-0 !border-t-0 p-4 sticky top-0 z-40">
+    <nav v-if="auth.isAuthenticated && !route.meta.hideLayout"
+      class="glass-card !rounded-none !border-x-0 !border-t-0 p-4 sticky top-0 z-40">
       <div class="max-w-6xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-2 cursor-pointer" @click="router.push('/rooms')">
           <div class="h-8 w-8 bg-brand rounded-lg flex items-center justify-center font-bold">Z</div>
@@ -27,10 +29,8 @@ function handleLogout() {
             <span class="text-xs text-slate-500">{{ auth.user?.email }}</span>
           </div>
 
-          <button
-            @click="handleLogout"
-            class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-          >
+          <button @click="handleLogout"
+            class="px-4 py-2 text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
             Logout
           </button>
         </div>
@@ -43,7 +43,7 @@ function handleLogout() {
     </main>
 
     <!-- Footer -->
-    <footer class="p-8 text-center text-slate-600 text-sm">
+    <footer v-if="!route.meta.hideLayout" class="p-8 text-center text-slate-600 text-sm">
       &copy; 2026 Zupkonerzy; Powered by UnkoR00T.com
     </footer>
   </div>
