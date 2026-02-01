@@ -13,7 +13,7 @@ interface Question {
 
 const props = defineProps<{
   question: Question,
-  marked: number,
+  marked?: number,
 }>()
 
 const letters = ['A', 'B', 'C', 'D']
