@@ -10,7 +10,7 @@ pub struct Question {
     img_url: Option<String>,
     video_url: Option<String>,
     answers: Vec<String>,
-    correct: i32,
+    pub correct: i32,
     pub difficulty: Option<i32>,
 }
 impl Question {
@@ -43,5 +43,9 @@ impl Question {
             .await
             .ok()
             .flatten()
+    }
+    pub fn strip_answer(mut self) -> Self {
+        self.correct = -1;
+        self
     }
 }

@@ -8,6 +8,7 @@ use crate::types::question::Question;
 #[serde(tag = "type", content = "data")]
 pub(crate) enum ClientMessage {
     AnswerQuestion { answer: i32 },
+    RerollQuestion {},
     Start {},
 }
 #[derive(Serialize, Deserialize, Clone)]
@@ -16,6 +17,8 @@ pub(crate) enum ServerMessage {
     Exiting(),
     GameStarted(),
     Question(Question),
+    MarkQuestion(i32),
+    FinalAnswer { correct: i32, marked: i32 },
     ConnectionAttempted(),
 }
 impl ServerMessage {

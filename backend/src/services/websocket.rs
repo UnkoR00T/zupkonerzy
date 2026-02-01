@@ -16,14 +16,39 @@ pub async fn handle_message(
     msg: ClientMessage,
 ) {
     info!("Handling message from {}: {:?}", client_id.id, msg);
-    // Use variables to silence unused warnings for now
-    let _ = clients;
-    let _ = games;
-    let _ = room_id;
 
     match msg {
         ClientMessage::AnswerQuestion { answer } => {
-            info!("Received answer: {}", answer);
+            if let Some(mut room) = games.get_mut(room_id) {
+                let question = match room.current_question.clone() {
+                    Some(question) => question,
+                    None => return,
+                };
+                if room.current_marked_answer.is_none()
+                    || room.current_marked_answer.unwrap_or(-1) != answer
+                {
+                    room.current_marked_answer = Some(answer);
+                    ServerMessage::MarkQuestion(answer).broadcast_room(clients, room_id);
+                } else {
+                    room.current_marked_answer = None;
+                    ServerMessage::FinalAnswer {
+                        correct: question.correct,
+                        marked: answer,
+                    }
+                    .broadcast_room(clients, room_id);
+                }
+            }
+        }
+        ClientMessage::RerollQuestion {} => {
+            if let Some(mut room) = games.get_mut(room_id) {
+                if let Some(question) =
+                    Question::get_random_question(room.current_question_number).await
+                {
+                    room.current_question = Some(question.clone());
+                    ServerMessage::Question(question.strip_answer())
+                        .broadcast_room(clients, room_id);
+                }
+            }
         }
         ClientMessage::Start {} => {
             info!("Starting game in room {}", room_id);
@@ -41,7 +66,7 @@ pub async fn handle_message(
                 }
 
                 // Broadcast Question
-                ServerMessage::Question(question).broadcast_room(clients, room_id);
+                ServerMessage::Question(question.strip_answer()).broadcast_room(clients, room_id);
             } else {
                 info!("No questions found!");
             }

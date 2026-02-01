@@ -40,6 +40,12 @@ const router = createRouter({
       meta: { requiresAuth: true, hideLayout: true },
     },
     {
+      path: '/rooms/:id/game/controller',
+      name: 'game-controller',
+      component: () => import('../views/GameControllerView.vue'),
+      meta: { requiresAuth: true, hideLayout: true },
+    },
+    {
       path: '/',
       redirect: '/rooms',
     },

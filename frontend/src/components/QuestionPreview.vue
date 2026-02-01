@@ -12,7 +12,8 @@ interface Question {
 }
 
 const props = defineProps<{
-  question: Question
+  question: Question,
+  marked: number,
 }>()
 
 const letters = ['A', 'B', 'C', 'D']
@@ -38,7 +39,7 @@ const letters = ['A', 'B', 'C', 'D']
     <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
       <div v-for="(answer, idx) in question.answers" :key="idx"
         class="game-box answer-box flex items-center p-4 relative cursor-default"
-        :class="{ 'correct-answer': idx === question.correct }">
+        :class="{ 'correct-answer': idx === question.correct, 'marked-answer': idx === marked }">
         <hr class="decoration-line left" />
         <hr class="decoration-line right" />
         <span class="text-[#d4af37] font-bold mr-4 text-xl">{{ letters[idx] }}:</span>
@@ -69,9 +70,15 @@ const letters = ['A', 'B', 'C', 'D']
 }
 
 .correct-answer {
-  background: linear-gradient(90deg, transparent 0%, #00600f 15%, #00600f 85%, transparent 100%) !important;
+  background: linear-gradient(90deg, transparent 0%, #00600f 15%, #00600f 100%) !important;
   border-color: #0f0;
   box-shadow: 0 0 10px #0f0, inset 0 0 20px #000;
+}
+
+.marked-answer {
+  background: linear-gradient(90deg, rgb(255, 166, 1) 0%, rgb(255, 166, 1) 100%) !important;
+  border-color: rgb(255, 166, 1);
+  box-shadow: 0 0 10px rgb(255, 166, 1), inset 0 0 20px #000;
 }
 
 

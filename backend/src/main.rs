@@ -290,8 +290,9 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2, games: Games) 
                     .into(),
             ));
             if let Some(ref q) = game.current_question {
+                let q = q.clone();
                 let _ = tx.send(Message::Text(
-                    serde_json::to_string(&ServerMessage::Question(q.clone()))
+                    serde_json::to_string(&ServerMessage::Question(q.strip_answer()))
                         .unwrap()
                         .into(),
                 ));
