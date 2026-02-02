@@ -9,6 +9,7 @@ pub struct GameState {
     pub current_question_number: i32,
     pub current_question: Option<Question>,
     pub current_marked_answer: Option<i32>,
+    pub ladder: bool,
 }
 
 impl Default for GameState {
@@ -18,6 +19,7 @@ impl Default for GameState {
             current_question_number: 0,
             current_question: None,
             current_marked_answer: None,
+            ladder: true,
         }
     }
 }

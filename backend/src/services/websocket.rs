@@ -45,9 +45,34 @@ pub async fn handle_message(
                     Question::get_random_question(room.current_question_number).await
                 {
                     room.current_question = Some(question.clone());
-                    ServerMessage::Question(question.strip_answer())
-                        .broadcast_room(clients, room_id);
+                    ServerMessage::Question {
+                        question: question.strip_answer(),
+                        question_number: room.current_question_number,
+                    }
+                    .broadcast_room(clients, room_id);
                 }
+            }
+        }
+        ClientMessage::NextQuestion {} => {
+            if let Some(mut room) = games.get_mut(room_id) {
+                room.current_question_number += 1;
+                room.current_marked_answer = None;
+                if let Some(question) =
+                    Question::get_random_question(room.current_question_number).await
+                {
+                    room.current_question = Some(question.clone());
+                    ServerMessage::Question {
+                        question: question.strip_answer(),
+                        question_number: room.current_question_number,
+                    }
+                    .broadcast_room(clients, room_id);
+                }
+            }
+        }
+        ClientMessage::SwitchLadder {} => {
+            if let Some(mut room) = games.get_mut(room_id) {
+                room.ladder = !room.ladder;
+                ServerMessage::SwitchLadder(room.ladder).broadcast_room(clients, room_id);
             }
         }
         ClientMessage::Start {} => {
@@ -55,7 +80,6 @@ pub async fn handle_message(
 
             // Broadcast GameStarted
             ServerMessage::GameStarted().broadcast_room(clients, room_id);
-
             // Fetch Question
             if let Some(question) = Question::get_random_question(1).await {
                 // Update State
@@ -66,7 +90,11 @@ pub async fn handle_message(
                 }
 
                 // Broadcast Question
-                ServerMessage::Question(question.strip_answer()).broadcast_room(clients, room_id);
+                ServerMessage::Question {
+                    question: question.strip_answer(),
+                    question_number: 1,
+                }
+                .broadcast_room(clients, room_id);
             } else {
                 info!("No questions found!");
             }

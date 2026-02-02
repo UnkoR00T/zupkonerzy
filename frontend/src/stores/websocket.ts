@@ -19,6 +19,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
       difficulty: number
     }
     marked: number
+    ladder: boolean
+    question_number: number
   }>({
     started: false,
     question: {
@@ -31,6 +33,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
       difficulty: 0,
     },
     marked: -1,
+    ladder: true,
+    question_number: 1,
   })
 
   const connect = (roomId: string) => {
@@ -50,7 +54,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
 
     currentRoomId.value = roomId
-    const url = `ws://localhost:8000/?token=${auth.token}&room=${roomId}`
+    const url = import.meta.env.DEV
+      ? `ws://localhost:8000/?token=${auth.token}&room=${roomId}`
+      : `wss://zupkonerzy.unkor00t.com/wss?token=${auth.token}&room=${roomId}`
     socket.value = new WebSocket(url)
 
     socket.value.onmessage = (event) => {
@@ -60,7 +66,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
         if (message.type == 'GameStarted') {
           gameState.value.started = true
         } else if (message.type == 'Question') {
-          const data = message.data as unknown as {
+          const data = message.data.question as unknown as {
             id: string
             question: string
             img_url: string
@@ -78,6 +84,8 @@ export const useWebSocketStore = defineStore('websocket', () => {
             correct: data.correct,
             difficulty: data.difficulty,
           }
+          gameState.value.marked = -1
+          gameState.value.question_number = message.data.question_number as unknown as number
         } else if (message.type == 'MarkQuestion') {
           const data = message.data as unknown as number
           gameState.value.marked = data
@@ -88,6 +96,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
           }
           gameState.value.question.correct = data.correct
           gameState.value.marked = data.marked
+        } else if (message.type == 'SwitchLadder') {
+          const data = message.data as unknown as boolean
+          gameState.value.ladder = data
         }
       } catch (e) {
         console.error('Failed to parse websocket message', e)

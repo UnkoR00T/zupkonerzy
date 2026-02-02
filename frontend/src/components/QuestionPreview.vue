@@ -81,8 +81,6 @@ const letters = ['A', 'B', 'C', 'D']
   box-shadow: 0 0 10px rgb(255, 166, 1), inset 0 0 20px #000;
 }
 
-
-
 .decoration-line.left {
   left: 0;
   transform-origin: left;

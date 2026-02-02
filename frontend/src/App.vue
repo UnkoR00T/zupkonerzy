@@ -19,7 +19,9 @@ function handleLogout() {
       class="glass-card !rounded-none !border-x-0 !border-t-0 p-4 sticky top-0 z-40">
       <div class="max-w-6xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-2 cursor-pointer" @click="router.push('/rooms')">
-          <div class="h-8 w-8 bg-brand rounded-lg flex items-center justify-center font-bold">Z</div>
+          <div class="h-8 w-8 rounded-lg flex items-center justify-center font-bold">
+            <img src="/logo_blue.png" alt="Logo">
+          </div>
           <span class="text-xl font-bold tracking-tight">Zupkonerzy</span>
         </div>
 
