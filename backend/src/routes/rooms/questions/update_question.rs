@@ -26,11 +26,27 @@ pub async fn update_question(
     let owner_id = client.id;
 
     // Check ownership of room
-    let room_check = sqlx::query("SELECT 1 FROM rooms WHERE id = $1 AND owner = $2")
-        .bind(&room_id)
-        .bind(owner_id)
-        .fetch_optional(db())
-        .await;
+    // Check ownership of room or access
+    let room_check = sqlx::query(
+        r#"
+        SELECT 1 
+        FROM rooms 
+        WHERE id = $1 
+        AND (
+            owner = $2 
+            OR EXISTS (
+                SELECT 1 
+                FROM room_access 
+                WHERE room_id = rooms.id 
+                AND client_id = $2
+            )
+        )
+        "#,
+    )
+    .bind(&room_id)
+    .bind(owner_id)
+    .fetch_optional(db())
+    .await;
 
     match room_check {
         Ok(Some(_)) => {}
