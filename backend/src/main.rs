@@ -299,6 +299,11 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2, games: Games) 
                     .unwrap()
                     .into(),
                 ));
+                let _ = tx.send(Message::Text(
+                    serde_json::to_string(&ServerMessage::Helpers(game.helpers))
+                        .unwrap()
+                        .into(),
+                ));
             }
         }
     }

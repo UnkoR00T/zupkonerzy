@@ -35,7 +35,7 @@ onUnmounted(() => {
 <template>
   <main class="h-[100dvh] w-[100dvw] flex items-center justify-center" v-if="socket.gameState.started">
     <QuestionPreview :question="socket.gameState.question" :marked="socket.gameState.marked"
-      v-if="!socket.gameState.ladder" />
+      :helpers="socket.gameState.helpers" v-if="!socket.gameState.ladder" />
     <Ladder v-else />
   </main>
   <main v-else class="h-[100dvh] w-[100dvw] flex flex-col gap-2 items-center justify-center">

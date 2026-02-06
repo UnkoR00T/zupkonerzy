@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 
 interface Question {
   id?: string
@@ -11,9 +10,10 @@ interface Question {
   difficulty: number | null
 }
 
-const props = defineProps<{
+defineProps<{
   question: Question,
   marked?: number,
+  helpers: boolean[]
 }>()
 
 const letters = ['A', 'B', 'C', 'D']
@@ -46,10 +46,85 @@ const letters = ['A', 'B', 'C', 'D']
         <span class="text-white text-lg md:text-xl font-semibold">{{ answer }}</span>
       </div>
     </div>
+    <div class="flex gap-4 md:gap-8 mt-6">
+      <div class="helper" :class="{ 'helper-used': !helpers[0] }">
+        <span class="text-xl md:text-2xl font-bold text-[#d4af37]">50:50</span>
+      </div>
+      <div class="helper" :class="{ 'helper-used': !helpers[1] }">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 md:w-8 md:h-8 text-[#d4af37]" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        </svg>
+      </div>
+      <div class="helper" :class="{ 'helper-used': !helpers[2] }">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 md:w-8 md:h-8 text-[#d4af37]" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.helper {
+  width: 60px;
+  height: 40px;
+  border: 2px solid #d4af37;
+  border-radius: 50%;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, #1a1a40 0%, #0d0d26 50%, #1a1a40 100%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  padding: 8px 16px;
+  min-width: 80px;
+}
+
+@media (min-width: 768px) {
+  .helper {
+    width: 100px;
+    height: 60px;
+  }
+}
+
+.helper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px #d4af37;
+  background: linear-gradient(180deg, #2a2a50 0%, #1d1d36 50%, #2a2a50 100%);
+}
+
+.helper-used {
+  position: relative;
+  opacity: 0.7;
+  filter: grayscale(100%);
+  border-color: #555;
+  cursor: not-allowed;
+}
+
+.helper-used::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120%;
+  height: 3px;
+  background-color: #ff3333;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  box-shadow: 0 0 5px #000;
+}
+
+.helper-used:hover {
+  transform: none;
+  box-shadow: none;
+  background: linear-gradient(180deg, #1a1a40 0%, #0d0d26 50%, #1a1a40 100%);
+}
 .millionaire-preview {
   background: radial-gradient(circle at center, #0f0c29, #302b63, #24243e);
   color: white;

@@ -21,6 +21,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     marked: number
     ladder: boolean
     question_number: number
+    helpers: boolean[]
   }>({
     started: false,
     question: {
@@ -35,10 +36,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
     marked: -1,
     ladder: true,
     question_number: 1,
+    helpers: [true, true, true],
   })
 
   const connect = (roomId: string) => {
-    // If already connected to this room and socket is open/connecting, do nothing
     if (
       currentRoomId.value === roomId &&
       socket.value &&
@@ -48,7 +49,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
       return
     }
 
-    // Close existing connection if any
     if (socket.value) {
       socket.value.close()
     }
@@ -99,6 +99,12 @@ export const useWebSocketStore = defineStore('websocket', () => {
         } else if (message.type == 'SwitchLadder') {
           const data = message.data as unknown as boolean
           gameState.value.ladder = data
+        } else if (message.type == 'HelperUsed') {
+          const data = message.data as unknown as number
+          gameState.value.helpers[data] = false
+        } else if (message.type == 'Helpers') {
+          const data = message.data as unknown as boolean[]
+          gameState.value.helpers = data
         }
       } catch (e) {
         console.error('Failed to parse websocket message', e)

@@ -3,6 +3,7 @@ import QuestionPreview from '@/components/QuestionPreview.vue';
 import { useWebSocketStore } from '@/stores/websocket';
 import { onBeforeMount, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import Ladder from '@/components/Ladder.vue';
 
 
 const route = useRoute();
@@ -47,7 +48,8 @@ onUnmounted(() => {
 <template>
   <main class="min-h-[25dvh] w-[100dvw] flex items-center justify-center resize-y">
     <QuestionPreview :question="socket.gameState.question" :marked="socket.gameState.marked"
-      class="resize-y min-h-[25dvh]" />
+      :helpers="socket.gameState.helpers" class="resize-y min-h-[25dvh]" v-if="!socket.gameState.ladder" />
+    <Ladder v-else />
   </main>
   <main class="mt-5 w-[100dvw] flex flex-col gap-2 items-center justify-center">
     <div class="flex gap-2">
@@ -61,6 +63,17 @@ onUnmounted(() => {
       <button class="btn-primary bg-red-500" @click="answer(1)">B</button>
       <button class="btn-primary bg-blue-500" @click="answer(2)">C</button>
       <button class="btn-primary bg-yellow-500" @click="answer(3)">D</button>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn-primary" @click="socket.sendMessage({ type: 'UseHelper', data: { helper: 0 } })"
+        :disabled="!socket.gameState.helpers[0]">50/50</button>
+      <button class="btn-primary" @click="socket.sendMessage({ type: 'UseHelper', data: { helper: 1 } })"
+        :disabled="!socket.gameState.helpers[1]">Phone a friend</button>
+      <button class="btn-primary" @click="socket.sendMessage({ type: 'UseHelper', data: { helper: 2 } })"
+        :disabled="!socket.gameState.helpers[2]">Ask audience</button>
+    </div>
+    <div class="flex">
+      <button class="btn-primary bg-red-500" @click="socket.sendMessage({ type: 'ResetHelpers', data: {} })">Reset helpers</button>
     </div>
     <div>
       <button class="btn-primary" @click="socket.sendMessage({ type: 'SwitchLadder', data: {} })">Switch ladder</button>

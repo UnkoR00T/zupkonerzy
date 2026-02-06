@@ -1,6 +1,7 @@
 pub mod answer_question;
 pub mod next_question;
 pub mod reroll_question;
+pub mod reset_helpers;
 pub mod start;
 pub mod switch_ladder;
 pub mod use_helper;
