@@ -10,6 +10,9 @@ pub struct GameState {
     pub current_question: Option<Question>,
     pub current_marked_answer: Option<i32>,
     pub ladder: bool,
+    // 50/50, phone a friend, ask audience
+    // true = available, false = used
+    pub helpers: [bool; 3],
 }
 
 impl Default for GameState {
@@ -20,6 +23,7 @@ impl Default for GameState {
             current_question: None,
             current_marked_answer: None,
             ladder: true,
+            helpers: [true; 3],
         }
     }
 }

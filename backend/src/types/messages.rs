@@ -35,6 +35,7 @@ pub(crate) enum ServerMessage {
         correct: i32,
         marked: i32,
     },
+    HelperUsed(i32),
     ConnectionAttempted(),
 }
 impl ServerMessage {
