@@ -1,18 +1,25 @@
 use serde::{Deserialize, Serialize};
 use tungstenite::{Message, Utf8Bytes};
 
+use crate::types::client::Client;
 use crate::types::connection::ClientsV2;
+use crate::types::gamestate::Games;
+use crate::types::handle_error::HandleError;
 use crate::types::question::Question;
+use async_trait::async_trait;
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(tag = "type", content = "data")]
-pub(crate) enum ClientMessage {
-    AnswerQuestion { answer: i32 },
-    RerollQuestion {},
-    NextQuestion {},
-    Start {},
-    SwitchLadder {},
+#[typetag::serde(tag = "type", content = "data")]
+#[async_trait]
+pub(crate) trait ClientMessage: Send + Sync {
+    async fn handle(
+        &self,
+        clients: &ClientsV2,
+        games: &Games,
+        room_id: &str,
+        client_id: &Client,
+    ) -> Result<(), HandleError>;
 }
+
 #[derive(Serialize, Deserialize, Clone)]
 #[serde(tag = "type", content = "data")]
 pub(crate) enum ServerMessage {
@@ -31,7 +38,6 @@ pub(crate) enum ServerMessage {
     ConnectionAttempted(),
 }
 impl ServerMessage {
-    // Send method directly for ServerMessage to remove the need of other functions.
     pub async fn send(self, clients: &ClientsV2, target: &str) -> Result<(), String> {
         let json: Utf8Bytes = serde_json::to_string(&self).unwrap().into();
         for room in clients.iter() {

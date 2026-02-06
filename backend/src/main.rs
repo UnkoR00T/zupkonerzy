@@ -318,7 +318,7 @@ async fn handle_connection(stream: TcpStream, clients: ClientsV2, games: Games) 
             Ok(msg) => {
                 if msg.is_text() {
                     let text = msg.to_text().unwrap();
-                    match serde_json::from_str::<ClientMessage>(text) {
+                    match serde_json::from_str::<Box<dyn ClientMessage>>(text) {
                         Ok(parsed) => {
                             handle_message(&clients, &games, &room, &client, parsed).await;
                         }

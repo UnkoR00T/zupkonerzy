@@ -24,8 +24,6 @@ pub async fn add_access(
     Json(payload): Json<AccessRequest>,
 ) -> impl IntoResponse {
     let pool = db();
-
-    // 1. Verify room ownership
     let room_exists = sqlx::query!("SELECT owner FROM rooms WHERE id = $1", room_id)
         .fetch_optional(pool)
         .await;
@@ -41,7 +39,6 @@ pub async fn add_access(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response(),
     }
 
-    // 2. Find user by email
     let target_user = sqlx::query!("SELECT id FROM clients WHERE email = $1", payload.email)
         .fetch_optional(pool)
         .await;
@@ -62,7 +59,6 @@ pub async fn add_access(
             .into_response();
     }
 
-    // 3. Add access
     let result = sqlx::query!(
         "INSERT INTO room_access (room_id, client_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
         room_id,
@@ -94,7 +90,6 @@ pub async fn remove_access(
 ) -> impl IntoResponse {
     let pool = db();
 
-    // 1. Verify room ownership
     let room_exists = sqlx::query!("SELECT owner FROM rooms WHERE id = $1", room_id)
         .fetch_optional(pool)
         .await;
@@ -110,7 +105,6 @@ pub async fn remove_access(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response(),
     }
 
-    // 2. Find user by email
     let target_user = sqlx::query!("SELECT id FROM clients WHERE email = $1", payload.email)
         .fetch_optional(pool)
         .await;
@@ -123,7 +117,6 @@ pub async fn remove_access(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response(),
     };
 
-    // 3. Remove access
     let result = sqlx::query!(
         "DELETE FROM room_access WHERE room_id = $1 AND client_id = $2",
         room_id,
@@ -161,7 +154,6 @@ pub async fn list_access(
 ) -> impl IntoResponse {
     let pool = db();
 
-    // 1. Verify room ownership
     let room_exists = sqlx::query!("SELECT owner FROM rooms WHERE id = $1", room_id)
         .fetch_optional(pool)
         .await;
@@ -177,7 +169,6 @@ pub async fn list_access(
         Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response(),
     }
 
-    // 2. Fetch users with access
     let users = sqlx::query_as::<_, AccessedUser>(
         r#"
         SELECT c.id, c.name, c.email
