@@ -242,7 +242,7 @@ onMounted(fetchQuestions)
           </button>
         </div>
         <div class="flex-1 overflow-auto rounded-2xl relative">
-          <QuestionPreview :question="previewQuestion" />
+          <QuestionPreview :question="previewQuestion" :helpers="[true, true, true]" />
         </div>
       </div>
     </div>
