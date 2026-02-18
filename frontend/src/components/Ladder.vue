@@ -7,43 +7,43 @@ const gameState = useWebSocketStore()
 <template>
   <div class="millionaire-preview w-full h-full flex flex-col items-center justify-center p-8 select-none font-sans">
     <div class="w-full max-w-4xl mb-8 relative flex flex-col gap-2">
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 10, 'bg-green-500!': gameState.gameState.question_number > 10 }">
         <h2 class="font-bold text-lg">10 Zupek</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 9, 'bg-green-500!': gameState.gameState.question_number > 9 }">
         <h2 class="font-bold text-lg">9 Zupek</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 8, 'bg-green-500!': gameState.gameState.question_number > 8 }">
         <h2 class="font-bold text-lg">8 Zupek</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 7, 'bg-green-500!': gameState.gameState.question_number > 7 }">
         <h2 class="font-bold text-lg">7 Zupek</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 6, 'bg-green-500!': gameState.gameState.question_number > 6 }">
         <h2 class="font-bold text-lg">6 Zupek</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 5, 'bg-green-500!': gameState.gameState.question_number > 5 }">
         <h2 class="font-bold text-lg">5 Zupek</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 4, 'bg-green-500!': gameState.gameState.question_number > 4 }">
         <h2 class="font-bold text-lg">4 Zupki</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 3, 'bg-green-500!': gameState.gameState.question_number > 3 }">
         <h2 class="font-bold text-lg">3 Zupki</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 2, 'bg-green-500!': gameState.gameState.question_number > 2 }">
         <h2 class="font-bold text-lg">2 Zupki</h2>
       </div>
-      <div class="game-box question-box text-center p-3 min-h-[20px] flex items-center justify-center"
+      <div class="game-box question-box text-center p-3 h-[40px] flex items-center justify-center"
         :class="{ 'bg-yellow-500!': gameState.gameState.question_number == 1, 'bg-green-800!': gameState.gameState.question_number > 1 }">
         <h2 class="font-bold text-lg">1 Zupka</h2>
       </div>
