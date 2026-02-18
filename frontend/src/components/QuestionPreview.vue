@@ -30,11 +30,11 @@ const letters = ['A', 'B', 'C', 'D']
       </div>
     </div>
 
-    <div v-if="question.img_url || question.video_url"
+    <!-- <div v-if="question.img_url || question.video_url"
       class="mb-8 max-h-[300px] max-w-[500px] overflow-hidden rounded-lg border-2 border-[#d4af37] shadow-[0_0_15px_#d4af37]">
       <img v-if="question.img_url" :src="question.img_url" class="object-contain w-full h-full" />
       <video v-if="question.video_url" :src="question.video_url" controls class="w-full h-full"></video>
-    </div>
+    </div> -->
 
     <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
       <div v-for="(answer, idx) in question.answers" :key="idx"

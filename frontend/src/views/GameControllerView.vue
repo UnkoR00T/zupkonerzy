@@ -4,12 +4,15 @@ import { useWebSocketStore } from '@/stores/websocket';
 import { onBeforeMount, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import Ladder from '@/components/Ladder.vue';
+import Bluetooth from '@/components/Bluetooth.vue';
+import { useBluetoothStore } from '@/stores/bluetooth';
 
 
 const route = useRoute();
 const router = useRouter();
 const roomId = route.params.id as string;
 const socket = useWebSocketStore();
+const bluetooth = useBluetoothStore();
 
 onBeforeMount(() => {
   socket.connect(roomId);
@@ -46,6 +49,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <Bluetooth />
   <main class="min-h-[25dvh] w-[100dvw] flex items-center justify-center resize-y">
     <QuestionPreview :question="socket.gameState.question" :marked="socket.gameState.marked"
       :helpers="socket.gameState.helpers" class="resize-y min-h-[25dvh]" v-if="!socket.gameState.ladder" />
@@ -77,6 +81,9 @@ onUnmounted(() => {
     </div>
     <div>
       <button class="btn-primary" @click="socket.sendMessage({ type: 'SwitchLadder', data: {} })">Switch ladder</button>
+    </div>
+    <div>
+      <button class="btn-primary" @click="bluetooth.sendColor(0, 0, 0)">Reset color</button>
     </div>
   </main>
 </template>

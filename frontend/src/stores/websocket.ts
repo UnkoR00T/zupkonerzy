@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
 import { ref } from 'vue'
+import { useBluetoothStore } from './bluetooth'
 
 export const useWebSocketStore = defineStore('websocket', () => {
-  const auth = useAuthStore()
+  const auth = useAuthStore();
+  const bluetooth = useBluetoothStore();
 
   const socket = ref<WebSocket | null>(null)
   const currentRoomId = ref<string | null>(null)
@@ -96,12 +98,24 @@ export const useWebSocketStore = defineStore('websocket', () => {
           }
           gameState.value.question.correct = data.correct
           gameState.value.marked = data.marked
+          if(data.marked == data.correct) {
+            bluetooth.pulse({r: 0, g: 255, b: 0}, 3000);
+          } else {
+            bluetooth.pulse({r: 255, g: 0, b: 0}, 3000);
+          }
         } else if (message.type == 'SwitchLadder') {
           const data = message.data as unknown as boolean
           gameState.value.ladder = data
         } else if (message.type == 'HelperUsed') {
-          const data = message.data as unknown as number
-          gameState.value.helpers[data] = false
+          const data = message.data as unknown as {
+            remove: number[]
+            helper: number
+          }
+          gameState.value.helpers[data.helper] = false
+          data.remove.forEach((index) => {
+            gameState.value.question.answers[index] = ''
+          })
+          bluetooth.pulse({r: 255, g: 255, b: 0}, 3000); //zupkonerzy = good jiggle physics = 100%
         } else if (message.type == 'Helpers') {
           const data = message.data as unknown as boolean[]
           gameState.value.helpers = data
@@ -112,9 +126,6 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
 
     socket.value.onclose = () => {
-      // Only clear if this was the socket we were tracking
-      // (Is this check needed? socket.value might have changed if we reconnected fast)
-      // For simplicity, maybe just leave it provided we handle start cleanly
     }
   }
 

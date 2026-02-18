@@ -23,7 +23,19 @@ impl ClientMessage for UseHelper {
         if let Some(mut room) = games.get_mut(room_id) {
             if room.helpers[self.helper as usize] {
                 room.helpers[self.helper as usize] = false;
-                ServerMessage::HelperUsed(self.helper).broadcast_room(clients, room_id);
+                if let Some(question) = &room.current_question {
+                    let mut remove: Vec<i32> = Vec::new();
+                    for i in 0..4 {
+                        if i != question.correct && remove.len() < 2 {
+                            remove.push(i);
+                        }
+                    }
+                    ServerMessage::HelperUsed {
+                        remove: remove.try_into().unwrap(),
+                        helper: self.helper,
+                    }
+                    .broadcast_room(clients, room_id);
+                }
                 Ok(())
             } else {
                 Err(HandleError::ServerError(
