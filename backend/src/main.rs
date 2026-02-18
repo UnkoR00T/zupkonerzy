@@ -60,7 +60,7 @@ async fn main() {
         games.clone(),
         ws_shutdown_rx,
     ));
-    let axum_server = tokio::spawn(run_axum(clients.clone(), rocket_shutdown_rx));
+    let axum_server = tokio::spawn(run_axum(clients.clone(), games.clone(), rocket_shutdown_rx));
 
     info!("Setting up cron");
     info!("WebSocket + Axum + Cron running... Press Ctrl+C to stop");
@@ -105,7 +105,30 @@ async fn run_ws_server(clients: ClientsV2, games: Games, mut shutdown_rx: broadc
     tracing::info!("WebSocket server stopped");
 }
 
-pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<()>) {
+#[derive(Clone)]
+struct AppState {
+    clients: ClientsV2,
+    games: Games,
+}
+
+impl axum::extract::FromRef<AppState> for ClientsV2 {
+    fn from_ref(input: &AppState) -> Self {
+        input.clients.clone()
+    }
+}
+
+impl axum::extract::FromRef<AppState> for Games {
+    fn from_ref(input: &AppState) -> Self {
+        input.games.clone()
+    }
+}
+
+pub async fn run_axum(clients: ClientsV2, games: Games, mut shutdown_rx: broadcast::Receiver<()>) {
+    let state = AppState {
+        clients: clients.clone(),
+        games: games.clone(),
+    };
+
     let app = Router::new()
         .route("/api/clients/login", post(login::login))
         .route("/api/clients/register", post(register::register))
@@ -131,11 +154,15 @@ pub async fn run_axum(clients: ClientsV2, mut shutdown_rx: broadcast::Receiver<(
                 .get(crate::routes::rooms::questions::get_questions::get_questions),
         )
         .route(
+            "/api/rooms/{room_id}/questions/reset_used",
+            post(crate::routes::rooms::questions::reset_used::reset_used_questions),
+        )
+        .route(
             "/api/rooms/{room_id}/questions/{question_id}",
             put(crate::routes::rooms::questions::update_question::update_question)
                 .delete(crate::routes::rooms::questions::delete_question::delete_question),
         )
-        .with_state(clients.clone())
+        .with_state(state)
         .layer(CorsLayer::permissive());
     info!("Axum routes ready and hot.");
     let addr = env::var("AXUM_ADDR").unwrap_or_else(|_| "0.0.0.0:8080".to_string());

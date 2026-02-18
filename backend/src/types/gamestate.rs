@@ -13,6 +13,7 @@ pub struct GameState {
     // 50/50, phone a friend, ask audience
     // true = available, false = used
     pub helpers: [bool; 3],
+    pub used_questions: Vec<String>,
 }
 
 impl Default for GameState {
@@ -24,6 +25,7 @@ impl Default for GameState {
             current_marked_answer: None,
             ladder: true,
             helpers: [true; 3],
+            used_questions: Vec::new(),
         }
     }
 }

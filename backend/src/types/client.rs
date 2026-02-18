@@ -1,11 +1,14 @@
-use crate::types::db::db;
-use crate::{types::claims::JWTClaims, JWT_SECRET};
-use axum::{extract::FromRequestParts, http::{request::Parts, StatusCode}};
 use crate::types::connection::ClientsV2;
+use crate::types::db::db;
+use crate::{JWT_SECRET, types::claims::JWTClaims};
+use axum::{
+    extract::FromRequestParts,
+    http::{StatusCode, request::Parts},
+};
 use jsonwebtoken::{DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
-use sqlx::postgres::PgRow;
 use sqlx::Row;
+use sqlx::postgres::PgRow;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Client {
@@ -14,16 +17,27 @@ pub struct Client {
     token: Option<String>,
 }
 
-impl FromRequestParts<ClientsV2> for Client {
+impl<S> FromRequestParts<S> for Client
+where
+    S: Send + Sync,
+{
     type Rejection = (StatusCode, String);
 
-    async fn from_request_parts(parts: &mut Parts, _state: &ClientsV2) -> Result<Self, Self::Rejection> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         let auth_header = parts
             .headers
             .get("Authorization")
-            .ok_or((StatusCode::UNAUTHORIZED, "Missing Authorization header".to_string()))?
+            .ok_or((
+                StatusCode::UNAUTHORIZED,
+                "Missing Authorization header".to_string(),
+            ))?
             .to_str()
-            .map_err(|_| (StatusCode::UNAUTHORIZED, "Invalid Authorization header".to_string()))?;
+            .map_err(|_| {
+                (
+                    StatusCode::UNAUTHORIZED,
+                    "Invalid Authorization header".to_string(),
+                )
+            })?;
 
         let token = auth_header.strip_prefix("Bearer ").unwrap_or(auth_header);
 

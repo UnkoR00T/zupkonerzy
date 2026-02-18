@@ -23,11 +23,13 @@ impl ClientMessage for Start {
     ) -> Result<(), HandleError> {
         info!("Starting game in room {}", room_id);
         ServerMessage::GameStarted().broadcast_room(clients, room_id);
-        if let Some(question) = Question::get_random_question(1).await {
+        if let Some(question) = Question::get_random_question(1, &Vec::new()).await {
             if let Some(mut room) = games.get_mut(room_id) {
                 room.started = true;
                 room.current_question_number = 1;
                 room.current_question = Some(question.clone());
+                room.used_questions.clear();
+                room.used_questions.push(question.id.clone());
             }
 
             ServerMessage::Question {
