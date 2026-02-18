@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router';
 import Ladder from '@/components/Ladder.vue';
 import Bluetooth from '@/components/Bluetooth.vue';
 import { useBluetoothStore } from '@/stores/bluetooth';
+import ConnectionPopup from '@/components/ConnectionPopup.vue';
 
 
 const route = useRoute();
@@ -49,6 +50,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <ConnectionPopup />
   <Bluetooth />
   <main class="min-h-[25dvh] w-[100dvw] flex items-center justify-center resize-y">
     <QuestionPreview :question="socket.gameState.question" :marked="socket.gameState.marked"

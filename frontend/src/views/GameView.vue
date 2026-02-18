@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Ladder from '@/components/Ladder.vue';
 import QuestionPreview from '@/components/QuestionPreview.vue';
+import ConnectionPopup from '@/components/ConnectionPopup.vue';
 import { useWebSocketStore } from '@/stores/websocket';
 import { onBeforeMount, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -43,4 +44,5 @@ onUnmounted(() => {
     <h1 class="text-6xl font-bold">Zupkonerzy</h1>
     <p class="text-lg text-gray-600">Powered by UnkoR00T.com</p>
   </main>
+  <ConnectionPopup />
 </template>

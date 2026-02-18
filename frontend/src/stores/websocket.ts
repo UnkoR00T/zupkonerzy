@@ -2,10 +2,12 @@ import { defineStore } from 'pinia'
 import { useAuthStore } from './auth'
 import { ref } from 'vue'
 import { useBluetoothStore } from './bluetooth'
+import { useSoundStore } from './sound'
 
 export const useWebSocketStore = defineStore('websocket', () => {
   const auth = useAuthStore();
   const bluetooth = useBluetoothStore();
+  const soundStore = useSoundStore();
 
   const socket = ref<WebSocket | null>(null)
   const currentRoomId = ref<string | null>(null)
@@ -43,6 +45,9 @@ export const useWebSocketStore = defineStore('websocket', () => {
     helpers: [true, true, true],
   })
 
+  const connected = ref(false)
+  let reconnectInterval: ReturnType<typeof setInterval> | null = null;
+
   const connect = (roomId: string) => {
     if (
       currentRoomId.value === roomId &&
@@ -56,12 +61,25 @@ export const useWebSocketStore = defineStore('websocket', () => {
     if (socket.value) {
       socket.value.close()
     }
+    if(reconnectInterval) {
+        clearInterval(reconnectInterval);
+        reconnectInterval = null;
+    }
 
     currentRoomId.value = roomId
     const url = import.meta.env.DEV
       ? `ws://localhost:8000/?token=${auth.token}&room=${roomId}`
       : `wss://zupkonerzy.unkor00t.com/wss?token=${auth.token}&room=${roomId}`
     socket.value = new WebSocket(url)
+
+    socket.value.onopen = () => {
+        connected.value = true;
+        console.log("WebSocket connected");
+        if(reconnectInterval) {
+            clearInterval(reconnectInterval);
+            reconnectInterval = null;
+        }
+    }
 
     socket.value.onmessage = (event) => {
       console.log(event.data)
@@ -105,8 +123,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
           gameState.value.marked = data.marked
           if(data.marked == data.correct) {
             bluetooth.pulse({r: 0, g: 255, b: 0}, 3000);
+            soundStore.playCorrect();
           } else {
             bluetooth.pulse({r: 255, g: 0, b: 0}, 3000);
+            soundStore.playWrong();
           }
         } else if (message.type == 'SwitchLadder') {
           const data = message.data as unknown as boolean
@@ -131,6 +151,14 @@ export const useWebSocketStore = defineStore('websocket', () => {
     }
 
     socket.value.onclose = () => {
+        connected.value = false;
+        console.log("WebSocket disconnected");
+        if(!reconnectInterval && currentRoomId.value) {
+            reconnectInterval = setInterval(() => {
+                console.log("Attempting reconnect...");
+                if(currentRoomId.value) connect(currentRoomId.value);
+            }, 3000);
+        }
     }
   }
 
@@ -145,6 +173,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
   return {
     socket,
     gameState,
+    connected,
     connect,
     sendMessage,
   }
