@@ -34,6 +34,7 @@ pub(crate) enum ServerMessage {
     FinalAnswer {
         correct: i32,
         marked: i32,
+        fun_fact: Option<String>,
     },
     Helpers([bool; 3]),
     HelperUsed {

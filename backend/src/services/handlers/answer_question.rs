@@ -36,6 +36,7 @@ impl ClientMessage for AnswerQuestion {
                 ServerMessage::FinalAnswer {
                     correct: question.correct,
                     marked: self.answer,
+                    fun_fact: question.fun_fact.clone(),
                 }
                 .broadcast_room(clients, room_id);
             }

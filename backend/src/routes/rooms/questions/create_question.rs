@@ -16,6 +16,7 @@ pub struct CreateQuestionPayload {
     pub answers: Vec<String>,
     pub correct: i32,
     pub difficulty: Option<i32>,
+    pub fun_fact: Option<String>,
 }
 
 pub async fn create_question(
@@ -67,7 +68,7 @@ pub async fn create_question(
         }
     }
 
-    let query = sqlx::query("INSERT INTO questions (room_id, question, img_url, video_url, answers, correct, difficulty) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id")
+    let query = sqlx::query("INSERT INTO questions (room_id, question, img_url, video_url, answers, correct, difficulty, fun_fact) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id")
         .bind(room_id)
         .bind(payload.question)
         .bind(payload.img_url)
@@ -75,6 +76,7 @@ pub async fn create_question(
         .bind(payload.answers)
         .bind(payload.correct)
         .bind(payload.difficulty)
+        .bind(payload.fun_fact)
         .fetch_one(db())
         .await;
 

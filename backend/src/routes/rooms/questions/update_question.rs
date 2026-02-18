@@ -15,6 +15,7 @@ pub struct UpdateQuestionPayload {
     pub answers: Vec<String>,
     pub correct: i32,
     pub difficulty: Option<i32>,
+    pub fun_fact: Option<String>,
 }
 
 pub async fn update_question(
@@ -67,13 +68,14 @@ pub async fn update_question(
         }
     }
 
-    let result = sqlx::query("UPDATE questions SET question = $1, img_url = $2, video_url = $3, answers = $4, correct = $5, difficulty = $6 WHERE id = $7 AND room_id = $8")
+    let result = sqlx::query("UPDATE questions SET question = $1, img_url = $2, video_url = $3, answers = $4, correct = $5, difficulty = $6, fun_fact = $7 WHERE id = $8 AND room_id = $9")
         .bind(payload.question)
         .bind(payload.img_url)
         .bind(payload.video_url)
         .bind(payload.answers)
         .bind(payload.correct)
         .bind(payload.difficulty)
+        .bind(payload.fun_fact)
         .bind(question_id)
         .bind(room_id)
         .execute(db())

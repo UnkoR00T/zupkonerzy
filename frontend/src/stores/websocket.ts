@@ -19,6 +19,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
       answers: string[]
       correct: number
       difficulty: number
+      fun_fact?: string
     }
     marked: number
     ladder: boolean
@@ -34,6 +35,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
       answers: [],
       correct: -1,
       difficulty: 0,
+      fun_fact: '',
     },
     marked: -1,
     ladder: true,
@@ -85,6 +87,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
             answers: data.answers,
             correct: data.correct,
             difficulty: data.difficulty,
+            fun_fact: '',
           }
           gameState.value.marked = -1
           gameState.value.question_number = message.data.question_number as unknown as number
@@ -95,8 +98,10 @@ export const useWebSocketStore = defineStore('websocket', () => {
           const data = message.data as unknown as {
             correct: number
             marked: number
+            fun_fact?: string
           }
           gameState.value.question.correct = data.correct
+          if(data.fun_fact) gameState.value.question.fun_fact = data.fun_fact
           gameState.value.marked = data.marked
           if(data.marked == data.correct) {
             bluetooth.pulse({r: 0, g: 255, b: 0}, 3000);

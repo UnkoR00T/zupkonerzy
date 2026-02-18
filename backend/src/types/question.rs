@@ -12,6 +12,7 @@ pub struct Question {
     answers: Vec<String>,
     pub correct: i32,
     pub difficulty: Option<i32>,
+    pub fun_fact: Option<String>,
 }
 impl Question {
     pub async fn get_from_id(id: &String) -> Option<Self> {
@@ -46,6 +47,7 @@ impl Question {
     }
     pub fn strip_answer(mut self) -> Self {
         self.correct = -1;
+        self.fun_fact = None;
         self
     }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 
 interface Question {
   id?: string
@@ -8,6 +9,7 @@ interface Question {
   answers: string[]
   correct: number
   difficulty: number | null
+  fun_fact?: string
 }
 
 defineProps<{
@@ -15,6 +17,8 @@ defineProps<{
   marked?: number,
   helpers: boolean[]
 }>()
+
+const route = useRoute();
 
 const letters = ['A', 'B', 'C', 'D']
 </script>
@@ -45,6 +49,11 @@ const letters = ['A', 'B', 'C', 'D']
         <span class="text-[#d4af37] font-bold mr-4 text-xl">{{ letters[idx] }}:</span>
         <span class="text-white text-lg md:text-xl font-semibold">{{ answer }}</span>
       </div>
+    </div>
+
+    <div v-if="question.fun_fact && route.meta.funFact" class="w-full max-w-4xl mt-8 p-6 bg-blue-900/50 border-2 border-[#d4af37] rounded-xl text-center shadow-[0_0_15px_#d4af37]">
+      <h3 class="text-xl font-bold text-[#d4af37] mb-2">Fun Fact</h3>
+      <p class="text-white text-lg">{{ question.fun_fact }}</p>
     </div>
     <div class="flex gap-4 md:gap-8 mt-6">
       <div class="helper" :class="{ 'helper-used': !helpers[0] }">

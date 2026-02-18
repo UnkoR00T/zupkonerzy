@@ -19,6 +19,7 @@ interface Question {
   answers: string[]
   correct: number
   difficulty: number | null
+  fun_fact?: string
 }
 
 interface QuestionsResponse {
@@ -38,7 +39,8 @@ const editedQuestion = ref<Question>({
   video_url: null,
   answers: ['', '', '', ''],
   correct: 0,
-  difficulty: null
+  difficulty: null,
+  fun_fact: ''
 })
 
 // Filters and Pagination
@@ -130,7 +132,8 @@ function resetForm() {
     video_url: null,
     answers: ['', '', '', ''],
     correct: 0,
-    difficulty: null
+    difficulty: null,
+    fun_fact: ''
   }
   isEditing.value = false
 }
@@ -208,6 +211,12 @@ onMounted(fetchQuestions)
               <label class="text-sm font-medium text-slate-300">Video URL (Optional)</label>
               <input v-model="editedQuestion.video_url" class="input-field" placeholder="https://..." />
             </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-slate-300">Fun Fact (Optional)</label>
+            <textarea v-model="editedQuestion.fun_fact" class="input-field min-h-[80px]"
+              placeholder="Did you know..."></textarea>
           </div>
 
           <div class="space-y-4">

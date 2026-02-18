@@ -37,13 +37,19 @@ const router = createRouter({
       path: '/rooms/:id/game',
       name: 'game',
       component: () => import('../views/GameView.vue'),
-      meta: { requiresAuth: true, hideLayout: true },
+      meta: { requiresAuth: true, hideLayout: true, funFact: false },
+    },
+    {
+      path: '/rooms/:id/game/tutor',
+      name: 'game-tutor',
+      component: () => import('../views/GameView.vue'),
+      meta: { requiresAuth: true, hideLayout: true, funFact: true },
     },
     {
       path: '/rooms/:id/game/controller',
       name: 'game-controller',
       component: () => import('../views/GameControllerView.vue'),
-      meta: { requiresAuth: true, hideLayout: true },
+      meta: { requiresAuth: true, hideLayout: true, funFact: true },
     },
     {
       path: '/',

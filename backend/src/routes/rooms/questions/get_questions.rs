@@ -68,7 +68,7 @@ pub async fn get_questions(
     let offset = (page - 1) * limit;
 
     let mut q_builder = sqlx::QueryBuilder::new(
-        "SELECT id, question, img_url, video_url, answers, correct, difficulty FROM questions WHERE room_id = ",
+        "SELECT id, question, img_url, video_url, answers, correct, difficulty, fun_fact FROM questions WHERE room_id = ",
     );
     q_builder.push_bind(&room_id);
 
